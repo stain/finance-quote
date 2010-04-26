@@ -296,28 +296,31 @@ sub currency {
       return $quotes_rate * 1;
     }
 
-     my $primary_rate = main_url($this, $from, $to);
+     my $primary_rate = primary_url($this, $from, $to);
      my $secondary_rate = secondary_url($this, $from, $to);
      my $exchange_rate = 0;
 
      if ( $primary_rate && $secondary_rate ) {
         my $ratio = $primary_rate / $secondary_rate;
+        #warn "\nprimary=$primary_rate secondary=$secondary_rate r=$ratio";
         if ( $ratio < 0.5 || $ratio > 2 ) {
           # Use lower-resolution answer as a fallback
           $exchange_rate = $secondary_rate;
           # TODO: Work out the difference in scale (typically 100)
           # and multiply the original $exchange_rate
         }
-     } else if( $primary_rate ) {
+     } elsif ( $primary_rate ) {
         $exchange_rate = $primary_rate;
-     } else if( $secondary_rate ) {
+        #warn "primary: $exchange_rate $from $to";
+     } elsif ( $secondary_rate ) {
         $exchange_rate = $secondary_rate;
+        #warn "secondary: $exchange_rate $from $to";
      } else {
         # Return undef in case neither $quotes_rate and $exchange_rate 
         # are valid numbers
+        #warn "undef: $from -> $to";
         return undef;
      }
-  }
 
   return ($exchange_rate * $amount);
 }
