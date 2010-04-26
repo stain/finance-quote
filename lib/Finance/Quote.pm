@@ -269,7 +269,7 @@ sub currency {
         local $^W = 0;  # Avoid undef warnings.
         return undef unless ($exchange_rate+0);
       }
-      return $exchange_rate * 1;
+      return $exchange_rate * 1.0;
   }
 
 
@@ -293,16 +293,16 @@ sub currency {
           local $^W = 0;  
           return undef unless ($quotes_rate+0);
       }
-      return $quotes_rate * 1;
+      return $quotes_rate * 1.0;
     }
 
      my $primary_rate = primary_url($this, $from, $to);
      my $secondary_rate = secondary_url($this, $from, $to);
-     my $exchange_rate = 0;
+     my $exchange_rate = $primary_rate;
 
      if ( $primary_rate && $secondary_rate ) {
         my $ratio = $primary_rate / $secondary_rate;
-        #warn "\nprimary=$primary_rate secondary=$secondary_rate r=$ratio";
+        print "\nprimary=$primary_rate secondary=$secondary_rate r=$ratio\n";
         if ( $ratio < 0.5 || $ratio > 2 ) {
           # Use lower-resolution answer as a fallback
           $exchange_rate = $secondary_rate;
@@ -311,14 +311,14 @@ sub currency {
         }
      } elsif ( $primary_rate ) {
         $exchange_rate = $primary_rate;
-        #warn "primary: $exchange_rate $from $to";
-     } elsif ( $secondary_rate ) {
+        print "primary: $exchange_rate $from $to\n";
+     } elsif ( !$primary_rate && $secondary_rate ) {
         $exchange_rate = $secondary_rate;
-        #warn "secondary: $exchange_rate $from $to";
+        print "secondary: $exchange_rate $from $to\n";
      } else {
         # Return undef in case neither $quotes_rate and $exchange_rate 
         # are valid numbers
-        #warn "undef: $from -> $to";
+        print "\nundef: $from -> $to\n";
         return undef;
      }
 
