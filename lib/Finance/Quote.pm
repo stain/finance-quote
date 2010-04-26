@@ -302,23 +302,17 @@ sub currency {
 
      if ( $primary_rate && $secondary_rate ) {
         my $ratio = $primary_rate / $secondary_rate;
-        print "\nprimary=$primary_rate secondary=$secondary_rate r=$ratio\n";
         if ( $ratio < 0.5 || $ratio > 2 ) {
-          # Use lower-resolution answer as a fallback
+          # Large difference, ignore $primary_rate 
+          # (This seems to happen for NOK->GBP, DKK->USD)
           $exchange_rate = $secondary_rate;
           # TODO: Work out the difference in scale (typically 100)
           # and multiply the original $exchange_rate
         }
-     } elsif ( $primary_rate ) {
-        $exchange_rate = $primary_rate;
-        print "primary: $exchange_rate $from $to\n";
      } elsif ( !$primary_rate && $secondary_rate ) {
+        # $primary rate failed, fall back to secondary
         $exchange_rate = $secondary_rate;
-        print "secondary: $exchange_rate $from $to\n";
-     } else {
-        # Return undef in case neither $quotes_rate and $exchange_rate 
-        # are valid numbers
-        print "\nundef: $from -> $to\n";
+     } elsif ( ! $exchange_rate ) {
         return undef;
      }
 

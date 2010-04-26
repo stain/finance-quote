@@ -7,7 +7,7 @@ if (not $ENV{ONLINE_TEST}) {
     plan skip_all => 'Set $ENV{ONLINE_TEST} to run this test';
 }
 
-plan tests => 11;
+plan tests => 12;
 
 # Test currency conversion, both explicit requests and automatic
 # conversion.
@@ -48,19 +48,18 @@ my $nokgbp=$q->currency("NOK", "GBP");
 my $gbpnok=$q->currency("GBP", "NOK");
 my $ratio = $gbpnok / (1.0 / $nokgbp);
 ok(abs(1-$ratio) < 0.05); 
-# warn "Mismatch: NOK/GBP=$nokgbp GBP/NOK=$gbpnok ratio=$ratio"
 
 # Test 11 
 # What if secondary URL is down? (We'll temporarily break it)
-#my $old_url = $Finance::Quote::YAHOO_CURRENCY_QUOTES_URL;
-#$Finance::Quote::YAHOO_CURRENCY_QUOTES_URL = "http://uk.finance.yahoo.com/q?ss=";
-#ok($q->currency("EUR", "GBP"));
-#$Finance::Quote::YAHOO_CURRENCY_QUOTES_URL = $old_url;
+my $old_url = $Finance::Quote::YAHOO_CURRENCY_QUOTES_URL;
+$Finance::Quote::YAHOO_CURRENCY_QUOTES_URL = "http://nowhere.nothere/?ss=";
+ok($q->currency("EUR", "GBP"));
+$Finance::Quote::YAHOO_CURRENCY_QUOTES_URL = $old_url;
 
 # Test 12
 # What if primary URL is down? (We'll temporarily break it)
-#$old_url = $Finance::Quote::YAHOO_CURRENCY_URL;
-#$Finance::Quote::YAHOO_CURRENCY_URL = "http://uk.finance.yahoo.com/q?ss=";
-#ok($q->currency("EUR", "GBP"));
-#$Finance::Quote::YAHOO_CURRENCY_URL = $old_url;
+$old_url = $Finance::Quote::YAHOO_CURRENCY_URL;
+$Finance::Quote::YAHOO_CURRENCY_URL = "http://nowhere.nothere/?ss=";
+ok($q->currency("EUR", "GBP"));
+$Finance::Quote::YAHOO_CURRENCY_URL = $old_url;
 
