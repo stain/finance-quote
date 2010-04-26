@@ -1,3 +1,113 @@
+Patch to Finance::Quote to compensate for Nordic currencies being
+reported with an exchange rate that seems to be multiplied
+by 100.
+
+This broke automatic currency updates in GNU Cash.
+
+
+
+
+---------- Forwarded message ----------
+From: Stian Soiland-Reyes <stian@soiland-reyes.com>
+Date: Mon, Apr 26, 2010 at 9:47 PM
+Subject: Re: Currency quote (DKK) in GnuCash not working - Patch added
+To: finance-quote-devel@lists.sourceforge.net
+
+
+Hi, I ran into the same issue as Henry Muppet reported 2010-03-21
+20:39 to finance-quote-devel, with currency lookups being off by a
+factor of 100 for certain Scandinavian currencies. (I was in fact also
+using GnuCash). I've found the same issue for currency("NOK", "GBP") -
+but not for currency("GBP", "NOK").
+
+Bradley Dean wrote:
+> Finance::Quote uses the following Yahoo Finance URL to find that
+> exchange rate:
+>
+>  http://uk.finance.yahoo.com/q?s=DKKUSD=X
+>
+> Looking at that page directly it looks like Yahoo is giving the wrong
+> result.
+
+I found a nice alternative URL that don't seem to suffer by the
+multiplied-by-100 problem:
+
+: stain@ralph ~;curl
+'http://uk.finance.yahoo.com/d/quotes.csv?e=.csv&f=l&s=DKKUSD=X'
+0.18
+
+This follows from the 'Download CSV' links, the guide at
+http://www.gummy-stuff.org/Yahoo-data.htm shows some of the fields
+that can be selected (most of which are only interesting for stocks).
+This might be useful also for other bits of Finance::Quote where you
+mentioned similar problems of units.
+
+However you might spot an issue here, although no HTML parsing is
+needed when using this "CSV download", we only get 2 digits precision,
+which for many users will not be good enough.
+
+
+So I went for a patch that checks both URLs, and falls back to the
+second one only if the difference between the numbers is more than
+50%. You could perfect this to work out what is the likely ratio, for
+instance I get that NOKGBP=X is 11.023 from the first URL, and 0.11
+from the second, a ratio of 100.209, meaning that we should use '100'
+as the ratio - but I'm not sure if there would also be any other such
+ratios.
+
+This problem probably relates to Scandinavian currencies traditionally
+being listed in newspapers etc. as '100 DKK: 18.32 USD" instead of
+using 1 DKK as the unit, as is common for most other currencies.
+
+
+We could also solve this in a different way, say by counter-checking
+the opposite direction, which don't seem to be affected:
+
+http://uk.finance.yahoo.com/q?s=NOKGBP=X says 11.023 while
+http://uk.finance.yahoo.com/q?s=GBPNOK=X says 9.0678 - but then the
+problem would be to work out which of the two is 'wrong'.
+
+A once-off test of all the currencies against the common ones
+(GBP,USD,JPY,EUR) (with some sleeps) might reveal which
+combinations/currencies are troublesome - the tests could either test
+using the two URLs from above, or just test X->Y vs. Y->X and flag
+anywhere this is not approximately inverse.
+
+
+Patch summary
+---------------------
+
+For my patch, see http://github.com/stain/finance-quote
+
+I split currency() into two inner methods (feel free to fix if this is
+bad style), one for primary_url() (the original) and one for
+secondary_url() (the CSV)
+
+
+I've added a few test cases in t/currency.t
+
+I also made it so that if the primary URL fails in any other way, it
+will also fall back to the lower resolution secondary URL. As the
+secondary CSV-URL don't require any screen scraping we could guess
+that it is less likely to break in the future, although of course a
+proper RESTful service for providing the financial data would have
+been superb.
+
+I'm happy that with this patch GnuCash works fine again with the
+Scandinavian currencies.
+
+--
+Stian Soiland-Reyes
+Manchester, UK
+http://soiland-reyes.com/
+
+
+
+
+
+
+
+
 NAME
 
     Finance::Quote - Get stock and mutual fund quotes from various exchanges
